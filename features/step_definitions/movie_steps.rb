@@ -46,12 +46,10 @@ Given /^I am on the RottenPotatoes home page$/ do
 # Add a declarative step here for populating the DB with movies.
 
 Given /the following movies have been added to RottenPotatoes:/ do |movies_table|
-  pending  # Remove this statement when you finish implementing the test step
   movies_table.hashes.each do |movie|
-    # Each returned movie will be a hash representing one row of the movies_table
-    # The keys will be the table headers and the values will be the row contents.
-    # Entries can be directly to the database with ActiveRecord methods
-    # Add the necessary Active Record call(s) to populate the database.
+    if !Movie.find_by(:title => movie[:title], :rating=> movie[:rating], :release_date => movie[:release_date])
+        Movie.create!(:title => movie[:title], :rating=> movie[:rating], :release_date => movie[:release_date])
+    end
   end
 end
 
@@ -59,15 +57,63 @@ When /^I have opted to see movies rated: "(.*?)"$/ do |arg1|
   # HINT: use String#split to split up the rating_list, then
   # iterate over the ratings and check/uncheck the ratings
   # using the appropriate Capybara command(s)
-  pending  #remove this statement after implementing the test step
+  
+  rating_list = arg1.split(', ')
+  all_ratings = Movie.all_ratings
+  all_ratings.each do |rating|
+    if rating_list.index(rating)
+        check("ratings[#{rating}]")
+    else
+        uncheck("ratings[#{rating}]")
+    end
+  end
+  click_button('Refresh')
 end
 
 Then /^I should see only movies rated: "(.*?)"$/ do |arg1|
-  pending  #remove this statement after implementing the test step
+    rating_list = arg1.split(', ')
+    foundInvalidMovie=false
+    all("tr").each do |tr|
+        foundRightRating = false
+        rating_list.each do |currRating|
+            if tr.has_content?(currRating)
+                foundRightRating = true
+                break
+            end
+        end
+        if !foundRightRating
+           foundInvalidMovie = true
+           break
+        end
+    end  
+  expect(!foundInvalidMovie).to be_truthy
 end
 
 Then /^I should see all of the movies$/ do
-  pending  #remove this statement after implementing the test step
+  #first check to make sure we have the same number of table rows as we do movies
+  sameNumber = false
+  if all("tr").size == Movie.all.size+1
+      sameNumber = true
+  end
+  
+  #now check to make sure that we have the same movies as the table
+  missingMovie = false
+  Movie.all.each do |movie|
+     foundMovie = false
+     all("tr").each do |tr|
+         if tr.has_content?(movie.title) && tr.has_content?(movie.rating) && tr.has_content?(movie.release_date)
+            foundMovie = true 
+            break
+         end
+     end
+     if !foundMovie
+         missingMovie = true
+         break
+     end
+  end
+  
+  expect(sameNumber).to be_truthy
+      
 end
 
 
