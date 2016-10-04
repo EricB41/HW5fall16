@@ -71,7 +71,17 @@ When /^I have opted to see movies rated: "(.*?)"$/ do |arg1|
 end
 
 Then /^I should see only movies rated: "(.*?)"$/ do |arg1|
+    numberOfMovies = 0
+    
+    
     rating_list = arg1.split(', ')
+    
+    rating_list.each do |rating|
+        numberOfMovies += Movie.where(rating: "#{rating}").size
+    end
+    correctMovieNum = (numberOfMovies == all("tr").size - 1)
+    
+    
     foundInvalidMovie=false
     all("tr").each do |tr|
         foundRightRating = false
@@ -86,7 +96,7 @@ Then /^I should see only movies rated: "(.*?)"$/ do |arg1|
            break
         end
     end  
-  expect(!foundInvalidMovie).to be_truthy
+  expect(!foundInvalidMovie && correctMovieNum).to be_truthy
 end
 
 Then /^I should see all of the movies$/ do
@@ -116,5 +126,20 @@ Then /^I should see all of the movies$/ do
       
 end
 
+When /^I have opted to sort movies by Movie Title$/ do
+    click_on "Movie Title"
+end
+
+When /^I have opted to sort movies by Release Date$/ do
+    click_on "Release Date"
+end
+
+Then /^I should see "(.*?)" before "(.*?)"$/ do |movie_1, movie_2|
+    pageBody = page.body
+    movieIndex1 = pageBody.index(movie_1)
+    movieIndex2 = pageBody.index(movie_2)
+    
+    expect(defined?(movieIndex1) && defined?(movieIndex2) && movieIndex1 < movieIndex2).to be_truthy
+end
 
 
